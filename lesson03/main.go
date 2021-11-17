@@ -15,11 +15,13 @@ func main() {
 	l := log.New(os.Stdout, "my-api", log.LstdFlags)
 	hh := handlers.NewHelloHandler(l)
 	gh := handlers.NewGoodByeHandler(l)
+	ph := handlers.NewProductHandler(l)
 
 	sm := http.NewServeMux()
 
 	sm.Handle("/", hh)
 	sm.Handle("/goodbye", gh)
+	sm.Handle("/products", ph)
 
 	s := &http.Server{
 		Handler:      sm,
