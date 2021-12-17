@@ -3,9 +3,9 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/rAndrade360/go-microservices/data"
 )
 
@@ -17,26 +17,7 @@ func NewProductHandler(l *log.Logger) *Product {
 	return &Product{l}
 }
 
-func (p *Product) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		p.getProducts(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		p.addProduct(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPut {
-		p.updateProduct(rw, r)
-		return
-	}
-
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-func (p *Product) getProducts(rw http.ResponseWriter, r *http.Request) {
+func (p *Product) GetProducts(rw http.ResponseWriter, r *http.Request) {
 	products := data.GetProducts()
 	err := products.ToJSON(rw)
 	if err != nil {
@@ -45,7 +26,7 @@ func (p *Product) getProducts(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (p *Product) addProduct(rw http.ResponseWriter, r *http.Request) {
+func (p *Product) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	prod := &data.Product{}
 
 	err := prod.FromJSON(r.Body)
@@ -56,19 +37,9 @@ func (p *Product) addProduct(rw http.ResponseWriter, r *http.Request) {
 	data.AddProduct(prod)
 }
 
-func (p *Product) updateProduct(rw http.ResponseWriter, r *http.Request) {
-	reg := regexp.MustCompile(`/([0-9]+)`)
-	g := reg.FindAllStringSubmatch(r.URL.Path, -1)
-
-	if len(g) != 1 {
-		http.Error(rw, "Invalid URI", http.StatusBadRequest)
-	}
-
-	if len(g[0]) != 2 {
-		http.Error(rw, "Invalid URI", http.StatusBadRequest)
-	}
-
-	idStr := g[0][1]
+func (p *Product) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
