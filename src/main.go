@@ -25,6 +25,8 @@ func main() {
 	getRouter.HandleFunc("/", ph.GetProducts)
 	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProduct)
 	postRouter.HandleFunc("/", ph.AddProduct)
+	postRouter.Use(ph.MiddlewareValidateProduct)
+	putRouter.Use(ph.MiddlewareValidateProduct)
 
 	s := &http.Server{
 		Handler:      sm,

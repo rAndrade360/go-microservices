@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"strconv"
@@ -27,12 +28,7 @@ func (p *Product) GetProducts(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Product) AddProduct(rw http.ResponseWriter, r *http.Request) {
-	prod := &data.Product{}
-
-	err := prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Error on decode json", http.StatusBadRequest)
-	}
+	prod := r.Context().Value(KeyProduct{}).(*data.Product)
 
 	data.AddProduct(prod)
 }
@@ -46,14 +42,28 @@ func (p *Product) UpdateProduct(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Error on parse string to int", http.StatusBadRequest)
 	}
 
-	prod := &data.Product{}
-
-	err = prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Error on decode json", http.StatusBadRequest)
-	}
+	prod := r.Context().Value(KeyProduct{}).(*data.Product)
 
 	prod.ID = uint(id)
 
 	data.UpdateProduct(prod)
+}
+
+type KeyProduct struct{}
+
+func (p *Product) MiddlewareValidateProduct(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		prod := &data.Product{}
+
+		err := prod.FromJSON(r.Body)
+		if err != nil {
+			http.Error(rw, "Error on decode json", http.StatusBadRequest)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
+		req := r.WithContext(ctx)
+
+		next.ServeHTTP(rw, req)
+	})
 }
